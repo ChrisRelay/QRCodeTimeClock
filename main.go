@@ -13,6 +13,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	badgeIdTable = "badge_id"
+	eventTable   = "sign_log"
+)
+
 var (
 	zBarPath *string
 )
@@ -44,24 +49,24 @@ func main() {
 			if len(parts) == 2 {
 
 				if parts[0] == "QR-Code" {
-					rowName := db.QueryRow("select name from badge where badge_id=?", parts[1])
+					rowName := db.QueryRow("select name from badge where "+badgeIdTable+"=?", parts[1])
 
 					var name string
 					err := rowName.Scan(&name)
 
 					if err == nil {
 
-						rowSignlog := db.QueryRow("select event from sign_log ORDER BY id DESC LIMIT 1")
+						rowSignlog := db.QueryRow("select event from " + eventTable + " ORDER BY id DESC LIMIT 1")
 
 						var event string
 						err := rowSignlog.Scan(&event)
 
 						if err == nil && event == "out" {
 							fmt.Printf("%s Signed In at %s\n", name, time.Now().Format(time.Kitchen))
-							db.Exec("insert into sign_log(badge_id, event_timestamp, event) values (?, ?, 'in')", parts[1], strconv.FormatInt(time.Now().Unix(), 10))
+							db.Exec("insert into "+eventTable+"(badge_id, event_timestamp, event) values (?, ?, 'in')", parts[1], strconv.FormatInt(time.Now().Unix(), 10))
 						} else {
 							fmt.Printf("%s Signed Out at %s\n", name, time.Now().Format(time.Kitchen))
-							db.Exec("insert into sign_log(badge_id, event_timestamp, event) values (?, ?, 'out')", parts[1], strconv.FormatInt(time.Now().Unix(), 10))
+							db.Exec("insert into "+eventTable+"(badge_id, event_timestamp, event) values (?, ?, 'out')", parts[1], strconv.FormatInt(time.Now().Unix(), 10))
 						}
 
 					} else {
